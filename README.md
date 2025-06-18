@@ -41,5 +41,5 @@ A powerful, visual monitoring interface for tracking **all your incoming (RX) an
 
 2. **Clone this repository**  
    ```sh
-   git clone https://github.com/YOURUSERNAME/thast-relay-monitoring.git
+   git clone https://github.com/FILORUX/thast-relay-monitoring.git
    cd thast-relay-monitoring
