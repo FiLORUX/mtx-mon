@@ -1,45 +1,36 @@
 # THÅST RELAY MONITORING
 
-**Modern, real-time feed and relay monitoring for any mediamtx-powered IP workflow.  
-Built for streamers, esports, events, studios, and video professionals.**
+**Zero-dependency, real-time web UI for monitoring any [mediamtx](https://github.com/bluenviron/mediamtx) instance.  
+Designed for streamers, esports, studios, events, IRL creators, and anyone moving video/audio over IP.**
 
 ---
 
-## What is this?
+## 🚦 What is this?
 
-A powerful, visual monitoring interface for tracking **all your incoming (RX) and outgoing (TX) video/audio feeds** in real time, powered by [mediamtx](https://github.com/bluenviron/mediamtx).
-
-- Instantly see which feeds are live or inactive
-- Visualize all source/destination “patches” with animated lines
-- Get live metadata: protocol, bitrate, duration, source, stats, and more
-- Effortlessly review feed history, session durations, and connection changes
-
-**Perfect for:**
-- Multi-stream studios
-- Esports and gaming productions
-- IRL & event streaming
-- Video relay and distribution nodes
-- Anyone who wants total, intuitive control of their mediamtx instance
+THÅST RELAY MONITORING is a self-contained HTML/JS app that gives you **live, visual feedback on all your feeds**—in, out, and in-between.  
+Think of it as “signal flow for the internet age”—see what’s running, where it’s coming from, how long it’s lived, and where it’s going, all in your browser.  
+No backend. No frameworks. No install. Just serve `index.html` and go.
 
 ---
 
-## Key Features
+## 🔥 Features
 
-- **Live feed visualization:** Animated RX/TX panels with real-time status
-- **Automatic history logging:** Feed session log and durations (browser-local)
-- **Broadcast-style UI:** Clean, readable design for big and small screens
-- **Protocol agnostic:** Works with SRT, RTMP, HLS, RTP, WebRTC, and anything mediamtx supports
-- **No backend required:** Just serve `index.html` and connect to your mediamtx API
-- **Lightweight:** Pure HTML/CSS/JavaScript, zero dependencies
+- **Live RX/TX feed dashboard** — instant overview of all sources & destinations
+- **Animated lines (“patch” view)** connecting feeds in real time
+- **Metadata and stats:** protocol, bitrate, duration, session log, and more
+- **History & session tracking:** see what was up, when, and for how long (browser-local, private)
+- **Professional yet simple UI:** clean, readable, big/small screen ready
+- **Works with everything:** SRT, RTMP, HLS, RTP, WebRTC, etc—anything mediamtx supports
+- **Zero dependencies:** just HTML, CSS, JS
 
 ---
 
-## Quick Start
+## 🛠️ Quick Start
 
-1. **Install [mediamtx](https://github.com/bluenviron/mediamtx) on your system**  
-   _Not included in this repo – download from the [official mediamtx releases](https://github.com/bluenviron/mediamtx/releases)._
+1. **Get [mediamtx](https://github.com/bluenviron/mediamtx) (not included)**  
+   Download from the [official releases](https://github.com/bluenviron/mediamtx/releases).
 
-2. **Clone this repository**  
+2. **Clone this repo**
    ```sh
    git clone https://github.com/FILORUX/thast-relay-monitoring.git
    cd thast-relay-monitoring
