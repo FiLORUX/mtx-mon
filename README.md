@@ -5,8 +5,6 @@ Built for streamers, esports, events, studios, and video professionals.**
 
 ---
 
-![screenshot or gif placeholder]
-
 ## What is this?
 
 A powerful, visual monitoring interface for tracking **all your incoming (RX) and outgoing (TX) video/audio feeds** in real time, powered by [mediamtx](https://github.com/bluenviron/mediamtx).
