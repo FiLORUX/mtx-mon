@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>THÅST RELAY MONITORING</title>
+  <style>
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 2em 2em 4em 2em;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3rem;
+      letter-spacing: 0.15em;
+      font-weight: 200;
+      color: #00ffc8;
+      margin-bottom: 1.5em;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4em;
+      position: relative;
+      z-index: 0;
+    }
+
+    .box {
+      background-color: #2a2a2a;
+      border-radius: 12px;
+      padding: 2em;
+      box-shadow: 0 0 12px rgba(0,255,200,0.25);
+      position: relative;
+      z-index: 1;
+    }
+
+    .box h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: #00ffc8;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2em;
+    }
+
+    .box h2 span.sub {
+      font-weight: normal;
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-left: 0.5em;
+    }
+
+    .entry {
+      margin-bottom: 2em;
+      padding: 1.2em 1.6em;
+      border-radius: 8px;
+      position: relative;
+      transition: opacity 0.5s ease-in-out, transform 0.5s ease;
+      background-color: #333;
+    }
+
+    .entry + .entry {
+      margin-top: 2em;
+    }
+
+    .active {
+      opacity: 1;
+    }
+
+    .inactive {
+      background-color: #1a1a1a;
+      color: #888;
+      opacity: 0.5;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #aaa;
+      display: inline-block;
+      min-width: 6em;
+    }
+
+    .value {
+      color: #fff;
+    }
+
+    .inactive .value {
+      color: #666;
+    }
+
+    .pulse {
+      animation: pulseGlow 1.5s ease-in-out 1;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 rgba(0,255,200,0); }
+      50% { box-shadow: 0 0 25px rgba(0,255,200,0.8); }
+      100% { box-shadow: 0 0 0 rgba(0,255,200,0); }
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 2em 0;
+  gap: 1em;
+  position: relative;
+}
+
+.header-flex .center {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.header-main {
+  font-family: inherit;
+  font-weight: 200;        /* Tunt och luftigt */
+  letter-spacing: 0.15em;  /* Samma spacing som huvudrubriken */
+  color: #00ffc8;
+  font-size: 1em;          /* Samma storlek som nuvarande .box h2 */
+  text-align: center;
+}
+
+.header-flex .sub {
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: #aaa;
+}
+
+.header-flex .left {
+  flex: 0 0 7em;   /* Justera om du vill ha mer/mindre yta */
+  text-align: left;
+}
+
+.header-flex .right {
+  flex: 0 0 8em;   /* Justera om du vill ha mer/mindre yta */
+  text-align: right;
+}
+
+  </style>
+</head>
+<body>
+  <h1>THÅST RELAY MONITORING</h1>
+  <div class="layout">
+    <div class="box">
+<h2 class="header-flex">
+  <span class="sub left">INCOMING</span>
+  <span class="header-main center">RX FEEDS</span>
+  <span id="clearInput" class="sub right" style="cursor:pointer;">CLEAR HISTORY</span>
+</h2>
+
+
+
+      <div id="input"></div>
+    </div>
+    <div class="box">
+<h2 class="header-flex">
+  <span class="sub left">OUTGOING</span>
+  <span class="header-main center">TX FEEDS</span>
+  <span id="clearOutput" class="sub right" style="cursor:pointer;">CLEAR HISTORY</span>
+</h2>
+
+
+
+      <div id="output"></div>
+    </div>
+  </div>
+  <canvas id="lines"></canvas>
+  <script>
+    const inputEl = document.getElementById('input');
+    const outputEl = document.getElementById('output');
+    const canvas = document.getElementById('lines');
+    const ctx = canvas.getContext('2d');
+
+    let localHistory = JSON.parse(localStorage.getItem('relayHistory')) || { inputs: {}, outputs: {} };
+
+    function formatISODate(date) {
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function formatDuration(startISO, endISO) {
+  if (!startISO || !endISO) return '-';
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const diff = Math.floor((end - start) / 1000);
+  const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+  const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+  const s = String(diff % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+    function drawLines(inputs, outputs) {
+      requestAnimationFrame(() => drawLines(inputs, outputs));
+      const dpr = window.devicePixelRatio || 1;
+      const width = window.innerWidth;
+      const height = document.documentElement.scrollHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+
+      ctx.clearRect(0, 0, width, height);
+
+      const time = Date.now() * 0.002;
+
+      [...inputs.children].forEach(inNode => {
+        const inName = inNode.dataset.name;
+        const outNodes = [...outputs.children].filter(o => o.dataset.source === inName);
+        const inRect = inNode.getBoundingClientRect();
+
+        outNodes.forEach(outNode => {
+          const outRect = outNode.getBoundingClientRect();
+
+          const spacing = 10;
+          const startX = inRect.right + window.scrollX + spacing;
+          const startY = inRect.top + inRect.height / 2 + window.scrollY;
+
+          const endX = outRect.left + window.scrollX - spacing;
+          const endY = outRect.top + outRect.height / 2 + window.scrollY;
+
+          ctx.beginPath();
+          const isInactive = outNode.classList.contains('inactive');
+
+          if (isInactive) {
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = 'rgba(0,255,200,0.25)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else {
+            const segmentCount = 20;
+            ctx.strokeStyle = '#00ffc8';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < segmentCount; i++) {
+              const t1 = i / segmentCount;
+              const t2 = (i + 1) / segmentCount;
+              const phase = (time * 100 - i * 10) % 100 / 100;
+              const alpha = 1 - Math.abs(phase - t1);
+
+              const x1 = startX + (endX - startX) * t1;
+              const y1 = startY + (endY - startY) * t1;
+              const x2 = startX + (endX - startX) * t2;
+              const y2 = startY + (endY - startY) * t2;
+
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.strokeStyle = `rgba(0,255,200,${alpha})`;
+              ctx.stroke();
+            }
+          }
+        });
+      });
+    }
+
+function createEntry(feed) {
+  const entry = document.createElement('div');
+  const isPulse = feed.lastActivated && (Date.now() - feed.lastActivated < 5000);
+  entry.className = 'entry ' + (feed.active ? 'active' + (isPulse ? ' pulse' : '') : 'inactive');
+  entry.dataset.name = feed.name || '';
+  if (feed.source) entry.dataset.source = feed.source;
+
+  const lines = [];
+  // Standardfälten
+  if (feed.name) lines.push(`<div><span class="label">Name:</span> <span class="value">${feed.name}</span></div>`);
+  if (feed.type) {
+    let label = feed.type.replace('Conn', '').toUpperCase();
+    if (feed.direction) label += ` (${feed.direction})`;
+    lines.push(`<div><span class="label">Protocol:</span> <span class="value">${label}</span></div>`);
+  }
+  if (feed.video) lines.push(`<div><span class="label">Video:</span> <span class="value">${feed.video}</span></div>`);
+  if (feed.audio) lines.push(`<div><span class="label">Audio:</span> <span class="value">${feed.audio}</span></div>`);
+  if (feed.bitrate) lines.push(`<div><span class="label">Bitrate:</span> <span class="value">${feed.bitrate}</span></div>`);
+  if (feed.totalData) lines.push(`<div><span class="label">Data:</span> <span class="value">${feed.totalData}</span></div>`);
+  if (feed.source && feed.source !== '-') lines.push(`<div><span class="label">Source:</span> <span class="value">${feed.source}</span></div>`);
+  if (feed.startISO) lines.push(`<div><span class="label">Started:</span> <span class="value" data-start="${feed.startISO}">${feed.startISO}</span></div>`);
+  if (feed.endedISO) lines.push(`<div><span class="label">Ended:</span> <span class="value">${feed.endedISO}</span></div>`);
+  if (feed.startISO) {
+    const end = feed.endedISO || formatISODate(new Date());
+    lines.push(`<div><span class="label">Duration:</span> <span class="value" data-duration style="font-family: monospace; font-size: 1.35em">${formatDuration(feed.startISO, end)}</span></div>`);
+  }
+
+  // --- NYA FÄLT (bara om finns i feed) ---
+  // Metadata
+  if (feed.id) lines.push(`<div><span class="label">ID:</span> <span class="value">${feed.id}</span></div>`);
+  if (feed.created) lines.push(`<div><span class="label">Created:</span> <span class="value">${feed.created}</span></div>`);
+  if (feed.remoteAddr) lines.push(`<div><span class="label">Remote:</span> <span class="value">${feed.remoteAddr}</span></div>`);
+  if (feed.state) lines.push(`<div><span class="label">State:</span> <span class="value">${feed.state}</span></div>`);
+  if (feed.path) lines.push(`<div><span class="label">Path:</span> <span class="value">${feed.path}</span></div>`);
+  if (feed.query) lines.push(`<div><span class="label">Query:</span> <span class="value">${feed.query}</span></div>`);
+
+  // Statistikfält – loopa för att visa endast de som finns och är >0
+  const statsFields = [
+    'packetsSent', 'packetsReceived', 'packetsSendLoss', 'packetsReceivedLoss',
+    'packetsRetrans', 'packetsReceivedRetrans', 'packetsSentACK', 'packetsSentNAK',
+    'packetsReceivedACK', 'packetsReceivedNAK', 'packetsSentKM', 'packetsReceivedKM',
+    'packetsSendDrop', 'packetsReceivedDrop', 'packetsReceivedUndecrypt', 'usSndDuration'
+  ];
+  statsFields.forEach(field => {
+    if (feed[field] !== undefined && feed[field] !== null) {
+      lines.push(`<div><span class="label">${field}:</span> <span class="value">${feed[field]}</span></div>`);
+    }
+  });
+
+  entry.innerHTML = lines.join('');
+  return entry;
+}
+
+
+    function updateFeeds(data) {
+      const now = Date.now();
+
+      data.inputs.forEach(feed => {
+        const prev = localHistory.inputs[feed.name];
+        feed.active = true;
+        if (!prev || !prev.active) feed.lastActivated = now;
+        else feed.lastActivated = prev.lastActivated;
+        feed.startISO = prev?.startISO || formatISODate(new Date());
+        localHistory.inputs[feed.name] = { ...feed, lastSeen: now };
+      });
+
+      data.outputs.forEach(feed => {
+        const prev = localHistory.outputs[feed.name];
+        feed.active = true;
+        if (!prev || !prev.active) feed.lastActivated = now;
+        else feed.lastActivated = prev.lastActivated;
+        feed.startISO = prev?.startISO || formatISODate(new Date());
+        localHistory.outputs[feed.name] = { ...feed, lastSeen: now };
+      });
+
+      for (const name in localHistory.inputs) {
+        if (!data.inputs.find(f => f.name === name)) {
+          localHistory.inputs[name].active = false;
+          localHistory.inputs[name].endedISO = localHistory.inputs[name].endedISO || formatISODate(new Date());
+        }
+      }
+
+      for (const name in localHistory.outputs) {
+        if (!data.outputs.find(f => f.name === name)) {
+          localHistory.outputs[name].active = false;
+          localHistory.outputs[name].endedISO = localHistory.outputs[name].endedISO || formatISODate(new Date());
+        }
+      }
+
+      const sortedInputs = Object.values(localHistory.inputs).sort((a,b)=>b.lastSeen-a.lastSeen);
+      const sortedOutputs = Object.values(localHistory.outputs).sort((a,b)=>b.lastSeen-a.lastSeen);
+
+      inputEl.innerHTML = '';
+      outputEl.innerHTML = '';
+
+      sortedInputs.forEach(feed => {
+        if (!feed.active && (now - feed.lastSeen) > 86400000) return;
+        inputEl.appendChild(createEntry(feed));
+      });
+
+      sortedOutputs.forEach(feed => {
+        if (!feed.active && (now - feed.lastSeen) > 86400000) return;
+        outputEl.appendChild(createEntry(feed));
+      });
+
+      localStorage.setItem('relayHistory', JSON.stringify(localHistory));
+      requestAnimationFrame(() => drawLines(inputEl, outputEl));
+    }
+
+    async function fetchData() {
+      try {
+        const res = await fetch('http://localhost:9997/v3/paths/list');
+        const json = await res.json();
+        const data = { inputs: [], outputs: [] };
+
+        json.items.forEach(p => {
+          const feed = {
+            name: p.name,
+            source: p.source?.id || '-',
+            type: p.source?.type || 'unknown',
+            direction: p.source?.direction || '',
+            video: p.tracks?.find(t => t.includes('H264')) || null,
+            audio: p.tracks?.find(t => t.includes('Audio')) || null,
+            bitrate: p.bitrate ? `${(p.bitrate / 1000).toFixed(1)} kbps` : null,
+            totalData: p.bytesReceived ? `${(p.bytesReceived / 1024 / 1024).toFixed(2)} MB` : null
+          };
+
+          if (p.source) data.inputs.push(feed);
+
+          (p.readers || []).forEach(r => {
+            data.outputs.push({
+              name: r.id,
+              source: p.name,
+              type: r.type,
+              bitrate: r.bitrate ? `${(r.bitrate / 1000).toFixed(1)} kbps` : null,
+              totalData: r.bytesSent ? `${(r.bytesSent / 1024 / 1024).toFixed(2)} MB` : null
+            });
+          });
+        });
+
+        updateFeeds(data);
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 2000);
+    window.addEventListener('resize', () => drawLines(inputEl, outputEl));
+    window.addEventListener('scroll', () => drawLines(inputEl, outputEl));
+  setInterval(() => {
+  document.querySelectorAll('.entry').forEach(entry => {
+    const start = entry.querySelector('.value[data-start]');
+    const dur = entry.querySelector('.value[data-duration]');
+    if (start && dur && !entry.classList.contains('inactive')) {
+      const startISO = start.getAttribute('data-start');
+      const endISO = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const d = formatDuration(startISO, endISO);
+      dur.textContent = d;
+    }
+  });
+}, 1000);
+
+document.getElementById('clearInput').onclick = () => {
+  // Spara bara aktiva feeds
+  let active = {};
+  for (let k in localHistory.inputs) {
+    if (localHistory.inputs[k].active) active[k] = localHistory.inputs[k];
+  }
+  localHistory.inputs = active;
+  localStorage.setItem('relayHistory', JSON.stringify(localHistory));
+  // Uppdatera vyn direkt
+  updateFeeds({inputs: Object.values(localHistory.inputs), outputs: Object.values(localHistory.outputs)});
+};
+
+document.getElementById('clearOutput').onclick = () => {
+  // Spara bara aktiva outputs
+  let active = {};
+  for (let k in localHistory.outputs) {
+    if (localHistory.outputs[k].active) active[k] = localHistory.outputs[k];
+  }
+  localHistory.outputs = active;
+  localStorage.setItem('relayHistory', JSON.stringify(localHistory));
+  // Uppdatera vyn direkt
+  updateFeeds({inputs: Object.values(localHistory.inputs), outputs: Object.values(localHistory.outputs)});
+};
+
+
+
+</script>
+</body>
+</html>
