@@ -1,4 +1,4 @@
-# THÅST RELAY MONITORING
+# MTX MONITOR - THÅST RELAY MONITORING
 
 **Zero-dependency, real-time web UI for monitoring any [mediamtx](https://github.com/bluenviron/mediamtx) instance.  
 Designed for streamers, esports, studios, events, IRL creators, and anyone moving video/audio over IP.**
@@ -7,7 +7,7 @@ Designed for streamers, esports, studios, events, IRL creators, and anyone movin
 
 ## 🚦 What is this?
 
-THÅST RELAY MONITORING is a self-contained HTML/JS app that gives you **live, visual feedback on all your feeds**—in, out, and in-between.  
+MTX-MON is a self-contained HTML/JS app that gives you **live, visual feedback on all your feeds**—in, out, and in-between.  
 Think of it as “signal flow for the internet age”—see what’s running, where it’s coming from, how long it’s lived, and where it’s going, all in your browser.  
 No backend. No frameworks. No install. Just serve `index.html` and go.
 
@@ -32,5 +32,5 @@ No backend. No frameworks. No install. Just serve `index.html` and go.
 
 2. **Clone this repo**
    ```sh
-   git clone https://github.com/FILORUX/thast-relay-monitoring.git
-   cd thast-relay-monitoring
+   git clone https://github.com/FiLORUX/mtx-mon.git
+   cd mtx-mon
