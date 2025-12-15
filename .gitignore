@@ -1,0 +1,22 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# MediaMTX local config (with passwords)
+mediamtx.local.yml
+
+# Logs
+*.log
+
+# Local test recordings
+recordings/
+*.mp4
+*.mkv
+*.ts
