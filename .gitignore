@@ -20,3 +20,9 @@ recordings/
 *.mp4
 *.mkv
 *.ts
+
+# AI/LLM local settings
+.claude/
+.cursor/
+.aider/
+.continue/
