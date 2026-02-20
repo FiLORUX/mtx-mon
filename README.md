@@ -34,3 +34,25 @@ No backend. No frameworks. No install. Just serve `index.html` and go.
    ```sh
    git clone https://github.com/FiLORUX/mtx-mon.git
    cd mtx-mon
+   ```
+
+3. **Ensure the mediamtx API is reachable**
+   The dashboard polls `http://localhost:9997/v3/paths/list` by default.
+   A ready-made `mediamtx.yml` is included if you need a quick starting point.
+
+4. **Serve and open**
+   ```sh
+   # Any static HTTP server will do
+   python3 -m http.server 8080
+   ```
+   Open `http://localhost:8080` in a browser.
+
+---
+
+## Licence
+
+MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+David Thåst · [thåst.se](https://xn--thst-roa.se) · [FiLORUX](https://github.com/FiLORUX)
